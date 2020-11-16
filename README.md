@@ -2,7 +2,7 @@
 
 ## It's for monitoring the Bot Crawlers request in real time
 
-Using the graphic interface of munin, we can check how many requests our platform recived from crawlers
+Using the graphic interface of munin, we can check how many requests our platform received from crawlers
 
 __For Apache Logs__
 
