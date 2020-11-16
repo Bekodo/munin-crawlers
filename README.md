@@ -1,6 +1,7 @@
 # munin-crawlers
 
 For Apache Logs
+
 <code>
 LogFormat "{ \"time\":\"%t\", \"remoteIP\":\"%{X-Forwarded-For}i\", \"host\":\"%V\", \
 "request\":\"%U\", \"query\":\"%q\", \"method\":\"%m\", \"status\":\"%>s\", \"userAgent\":
@@ -10,6 +11,7 @@ CustomLog "logs/access.log" jsonlog env=forwarded
 </code>
 
 For munin-node config
+
 <code>
 [munin-crawler]
 group varnish
