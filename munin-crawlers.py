@@ -30,9 +30,9 @@ class Monitor(object):
         else:
             return 'others'
 
-    def __check_if_string_in_file(self,file_name):
+    def __check_if_string_in_file(self):
         useragents_desordered = {}
-        with open(file_name, 'r') as read_obj:
+        with open(self.file_name, 'r') as read_obj:
             for line in read_obj:
                 if any(time in line for time in self.periods):
                     line = line.replace("\r","")
