@@ -21,3 +21,10 @@ __For munin-node config__
 group varnish
 env.file_name /var/log/httpd/access.log
 ```
+
+__Install__
+
+```
+cd /etc/munin/plugins
+ln -s /usr/share/munin/plugins/munin-crawler.py munin-crawler
+```
