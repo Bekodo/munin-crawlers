@@ -50,7 +50,7 @@ class Monitor(object):
                     except:
                         pass
         if not 'others' in useragents_desordered:
-            useragents_desordered['others']=1
+            useragents_desordered['others']=0
         self.useragents = sorted(useragents_desordered.items(), key=lambda x: x[1], reverse=True)
 
     def printValue(self):
