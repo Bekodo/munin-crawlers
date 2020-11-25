@@ -7,6 +7,7 @@ class Monitor(object):
     file_name = ''
     periods = []
     useragents = {}
+    limitloglines = 25000
 
     def __init__(self):
         self.file_name = os.environ.get('file_name')
@@ -33,7 +34,7 @@ class Monitor(object):
     def __check_if_string_in_file(self):
         useragents_desordered = {}
         with open(self.file_name, 'r') as read_obj:
-            for line in read_obj:
+            for line in (read_obj.readlines() [-self.limitloglines:]):
                 if any(time in line for time in self.periods):
                     line = line.replace("\r","")
                     line = line.replace("\t","")
