@@ -42,6 +42,7 @@ class Monitor(object):
                     line = line.replace("\\","")
                     try:
                         data_json = json.loads(line)
+                        useragents_desordered[All] += 1
                         if 'bot' in data_json['userAgent'].lower():
                             UserAgent = self.__classifie_user_agent(data_json['userAgent'])
                             if UserAgent in useragents_desordered:
@@ -78,6 +79,8 @@ class Monitor(object):
         config += self.__setconfOrder()
         for item in self.useragents:
             config += item[0]+".label " + item[0] + "\n"
+            if (item[0] == 'All'):
+                config += item[0]+".draw " + "LINE1" + "\n"
             if (item[0] == 'others'):
                 config += item[0]+".draw " + "AREA" + "\n"
             else:
