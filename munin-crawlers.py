@@ -2,6 +2,7 @@
 
 import json, sys, os
 import datetime
+from pprint import pprint
 
 class Monitor(object):
     file_name = ''
@@ -33,6 +34,7 @@ class Monitor(object):
 
     def __check_if_string_in_file(self):
         useragents_desordered = {}
+        counter = 0
         with open(self.file_name, 'r') as read_obj:
             for line in (read_obj.readlines() [-self.limitloglines:]):
                 if any(time in line for time in self.periods):
@@ -40,9 +42,9 @@ class Monitor(object):
                     line = line.replace("\t","")
                     line = line.replace("\n","")
                     line = line.replace("\\","")
+                    counter += 1
                     try:
                         data_json = json.loads(line)
-                        useragents_desordered[All] += 1
                         if 'bot' in data_json['userAgent'].lower():
                             UserAgent = self.__classifie_user_agent(data_json['userAgent'])
                             if UserAgent in useragents_desordered:
@@ -53,10 +55,11 @@ class Monitor(object):
                         pass
         if not 'others' in useragents_desordered:
             useragents_desordered['others']=0
+        useragents_desordered['All'] = counter
         self.useragents = sorted(useragents_desordered.items(), key=lambda x: x[1], reverse=True)
 
     def printValue(self):
-        self.__check_if_string_in_file(self.file_name)
+        self.__check_if_string_in_file()
         for key in self.useragents:
             if key:
                 print("{}.value {}".format(key[0],key[1]))
@@ -70,7 +73,7 @@ class Monitor(object):
         return order
 
     def printConf(self):
-        self.__check_if_string_in_file(self.file_name)
+        self.__check_if_string_in_file()
         config = "graph_title " + " Crawlers\n"\
         "graph_args --base 1000 -r --lower-limit 0\n"\
         "graph_vlabel number of Crawlers Request\n"\
@@ -81,7 +84,7 @@ class Monitor(object):
             config += item[0]+".label " + item[0] + "\n"
             if (item[0] == 'All'):
                 config += item[0]+".draw " + "LINE1" + "\n"
-            if (item[0] == 'others'):
+            elif (item[0] == 'others'):
                 config += item[0]+".draw " + "AREA" + "\n"
             else:
                 config += item[0]+".draw " + "STACK" + "\n"
