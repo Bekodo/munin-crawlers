@@ -42,7 +42,6 @@ class Monitor(object):
                     line = line.replace("\t","")
                     line = line.replace("\n","")
                     line = line.replace("\\","")
-                    counter += 1
                     try:
                         data_json = json.loads(line)
                         if 'bot' in data_json['userAgent'].lower():
@@ -55,7 +54,6 @@ class Monitor(object):
                         pass
         if not 'others' in useragents_desordered:
             useragents_desordered['others']=0
-        useragents_desordered['All'] = counter
         self.useragents = sorted(useragents_desordered.items(), key=lambda x: x[1], reverse=True)
 
     def printValue(self):
@@ -82,9 +80,7 @@ class Monitor(object):
         config += self.__setconfOrder()
         for item in self.useragents:
             config += item[0]+".label " + item[0] + "\n"
-            if (item[0] == 'All'):
-                config += item[0]+".draw " + "LINE1" + "\n"
-            elif (item[0] == 'others'):
+            if (item[0] == 'others'):
                 config += item[0]+".draw " + "AREA" + "\n"
             else:
                 config += item[0]+".draw " + "STACK" + "\n"
