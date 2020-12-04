@@ -9,7 +9,7 @@ class Monitor(object):
     periods = []
     useragents = {}
     limitloglines = 25000
-    botstrings = 'bot'
+    botstrings = ['bot','amphtml']
 
     def __init__(self):
         self.file_name = os.environ.get('file_name')
@@ -47,7 +47,7 @@ class Monitor(object):
                     line = line.replace("\\","")
                     try:
                         data_json = json.loads(line)
-                        if self.botstrings in data_json['userAgent'].lower():
+                        if any(useragent in data_json['userAgent'].lower() for useragent in self.botstrings):
                             UserAgent = self.__classifie_user_agent(data_json['userAgent'])
                             if UserAgent in useragents_desordered:
                                 useragents_desordered[UserAgent] += 1
