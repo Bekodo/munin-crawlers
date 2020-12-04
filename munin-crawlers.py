@@ -9,7 +9,7 @@ class Monitor(object):
     periods = []
     useragents = {}
     limitloglines = 25000
-    botstrings = ['bot', 'amphtml']
+    botstrings = 'bot'
 
     def __init__(self):
         self.file_name = os.environ.get('file_name')
@@ -29,7 +29,7 @@ class Monitor(object):
         if 'aspiegel'.lower() in useragent.lower():
             return 'aspiegel'
         if 'Applebot'.lower() in useragent.lower():
-            return 'Applebot
+            return 'Applebot'
         if 'AMPHTML'.lower() in useragent.lower():
             return 'GoogleAMP'
         else:
