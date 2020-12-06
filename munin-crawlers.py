@@ -32,6 +32,10 @@ class Monitor(object):
             return 'Applebot'
         if 'AMPHTML'.lower() in useragent.lower():
             return 'GoogleAMP'
+        if 'mj12bot'.lower() in useragent.lower():
+            return 'mj12bot'
+        if 'Twitterbot'.lower() in useragent.lower():
+            return 'Twitterbot'
         else:
             return 'others'
 
