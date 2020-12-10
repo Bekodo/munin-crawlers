@@ -9,7 +9,10 @@ class Monitor(object):
     periods = []
     useragents = {}
     limitloglines = 25000
-    botstrings = ['bot','amphtml']
+    #Strings to get Crawlers un User-Agent, you can add more strings
+    botstrings = ['bot', 'AMPHTML']
+    #List of User-Agents defined with the strings of botstrings, you can add more User-Agents
+    listuseragents = ['Googlebot', 'AhrefsBot', 'SemrushBot', 'bingbot', 'aspiegel', 'Applebot', 'AMPHTML',  'mj12bot', 'Twitterbot']
 
     def __init__(self):
         self.file_name = os.environ.get('file_name')
@@ -18,29 +21,12 @@ class Monitor(object):
             self.periods.append(time.strftime("[%d/%b/%Y:%H:%M:"))
 
     def __classifie_user_agent(self,useragent):
-        if 'Googlebot'.lower() in useragent.lower():
-            return 'Googlebot'
-        if 'AhrefsBot'.lower() in useragent.lower():
-            return 'AhrefsBot'
-        if 'SemrushBot'.lower() in useragent.lower():
-            return 'SemrushBot'
-        if 'bingbot'.lower() in useragent.lower():
-            return 'bingbot'
-        if 'aspiegel'.lower() in useragent.lower():
-            return 'aspiegel'
-        if 'Applebot'.lower() in useragent.lower():
-            return 'Applebot'
-        if 'AMPHTML'.lower() in useragent.lower():
-            return 'GoogleAMP'
-        if 'mj12bot'.lower() in useragent.lower():
-            return 'mj12bot'
-        if 'Twitterbot'.lower() in useragent.lower():
-            return 'Twitterbot'
-        else:
-            return 'others'
+        for value in self.listuseragents:
+            if value.lower() in useragent.lower(): 
+                return value
 
     def __check_if_string_in_file(self):
-        useragents_desordered = {}
+        useragents_desordered = {'others': 0}
         counter = 0
         with open(self.file_name, 'r') as read_obj:
             for line in (read_obj.readlines() [-self.limitloglines:]):
@@ -53,10 +39,13 @@ class Monitor(object):
                         data_json = json.loads(line)
                         if any(useragent in data_json['userAgent'].lower() for useragent in self.botstrings):
                             UserAgent = self.__classifie_user_agent(data_json['userAgent'])
-                            if UserAgent in useragents_desordered:
-                                useragents_desordered[UserAgent] += 1
+                            if (UserAgent):
+                                if UserAgent in useragents_desordered:
+                                    useragents_desordered[UserAgent] += 1
+                                else:
+                                    useragents_desordered[UserAgent] = 1
                             else:
-                                useragents_desordered[UserAgent] = 1
+                                useragents_desordered['others'] +=1
                     except:
                         pass
         if not 'others' in useragents_desordered:
