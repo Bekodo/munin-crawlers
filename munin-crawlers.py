@@ -16,6 +16,7 @@ class Monitor(object):
 
     def __init__(self):
         self.file_name = os.environ.get('file_name')
+        self.botstrings = [x.lower() for x in self.botstrings]
         for i in range(1,6):
             time = datetime.datetime.now() - datetime.timedelta(minutes=i)
             self.periods.append(time.strftime("[%d/%b/%Y:%H:%M:"))
