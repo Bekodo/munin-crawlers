@@ -2,7 +2,6 @@
 
 import json, sys, os
 import datetime
-from pprint import pprint
 
 class Monitor(object):
     file_name = ''
