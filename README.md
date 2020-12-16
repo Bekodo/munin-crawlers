@@ -24,7 +24,7 @@ __For munin-node config__
 
 ```
 [munin-crawler]
-group varnish
+group root
 env.file_name /var/log/httpd/access.log
 ```
 
