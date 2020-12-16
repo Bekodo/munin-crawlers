@@ -4,6 +4,14 @@
 
 Using the graphic interface of munin, we can check how many requests our platform received from crawlers
 
+__Custom Values__
+
+```
+limitloglines number of lines like tail -n
+botstrings array of strings to get bots
+listuseragents array of bots to classify
+```
+
 __For Apache Logs__
 
 ```
