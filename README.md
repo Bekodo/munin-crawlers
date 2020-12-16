@@ -30,4 +30,5 @@ ln -s /usr/share/munin/plugins/munin-crawler.py munin-crawler
 ```
 
 __Screen__
+
 ![Screnn](Doc/img/munin_crawler-day.png)
