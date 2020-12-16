@@ -6,11 +6,9 @@ Using the graphic interface of munin, we can check how many requests our platfor
 
 __Custom Values__
 
-```
-limitloglines number of lines like tail -n
-botstrings array of strings to get bots
-listuseragents array of bots to classify
-```
+* __limitloglines__ number of lines like tail -n
+* __botstrings__ array of strings to get bots
+* __listuseragents__ array of bots to classify
 
 __For Apache Logs__
 
