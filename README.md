@@ -35,6 +35,11 @@ cd /etc/munin/plugins
 ln -s /usr/share/munin/plugins/munin-crawler.py munin-crawler
 ```
 
+__To Know what is the value of limitloglines__
+```
+cat /var/log/varnish/varnishncsa.log | jsonlog.php -t | cut -d" " -f1 | cut -d"/" -f3 | cut -d":" -f2,3 | sort | uniq -c | sort -n -k1
+```
+
 __Screen__
 
 ![Screnn](Doc/img/munin_crawler-day.png)
