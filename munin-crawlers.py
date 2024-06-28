@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import json
 import sys
 import os
@@ -8,6 +6,7 @@ import datetime
 class Monitor:
     def __init__(self):
         self.file_name = os.environ.get('file_name')
+        self.environment = os.environ.get('environment')
         self.periods = []
         self.useragents = {}
         self.limitloglines = 5000
@@ -35,10 +34,19 @@ class Monitor:
             'AwarioBot'
         ]
         self.botstrings = ['bot', 'craw']
-        
-        for i in range(1,6):
-            time = datetime.datetime.now() - datetime.timedelta(minutes=i)
-            self.periods.append(time.strftime("[%d/%b/%Y:%H:%M:"))
+
+        if self.environment == 'dev':
+            # Forzar la fecha específica para pruebas
+            fixed_time_str = "28/Jun/2024:00:00:14"
+            fixed_time = datetime.datetime.strptime(fixed_time_str, "%d/%b/%Y:%H:%M:%S")
+            
+            for i in range(1, 6):
+                time = fixed_time - datetime.timedelta(minutes=i)
+                self.periods.append(time.strftime("[%d/%b/%Y:%H:%M:"))
+        else:        
+            for i in range(1,6):
+                time = datetime.datetime.now() - datetime.timedelta(minutes=i)
+                self.periods.append(time.strftime("[%d/%b/%Y:%H:%M:"))
 
     def __classify_user_agent(self, useragent):
         for value in self.listuseragents:
