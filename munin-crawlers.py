@@ -10,7 +10,7 @@ class Monitor:
         self.periods = []
         self.useragents = {}
         self.limitloglines = 5000
-        self.listuseragents = [
+        self.listuseragents = {
             'Googlebot',
             'AhrefsBot',
             'SemrushBot',
@@ -31,13 +31,15 @@ class Monitor:
             'facebookexternalhit',
             'UptimeRobot',
             'GoogleOther',
-            'AwarioBot'
-        ]
-        self.botstrings = ['bot', 'craw']
+            'AwarioBot',
+            'Yeti',
+            'meta'
+        }
+        self.botstrings = {'bot', 'craw'}
 
         if self.environment == 'dev':
             # Forzar la fecha específica para pruebas
-            fixed_time_str = "28/Jun/2024:00:00:14"
+            fixed_time_str = "10/Mar/2025:18:19:47"
             fixed_time = datetime.datetime.strptime(fixed_time_str, "%d/%b/%Y:%H:%M:%S")
             
             for i in range(1, 6):
@@ -49,11 +51,12 @@ class Monitor:
                 self.periods.append(time.strftime("[%d/%b/%Y:%H:%M:"))
 
     def __classify_user_agent(self, useragent):
+        useragent_lower = useragent.lower()
         for value in self.listuseragents:
-            if value.lower() in useragent.lower():
+            if value.lower() in useragent_lower:
                 return value
         for bot in self.botstrings:
-            if bot in useragent:
+            if bot in useragent_lower:
                 return 'others'
         return None
 
@@ -76,7 +79,7 @@ class Monitor:
                 try:
                     data_json = json.loads(line)
                     useragents_count['Total'] += 1
-                    user_agent = data_json.get('userAgent', '').lower()
+                    user_agent = data_json.get('userAgent', '')
                     classified_user_agent = self.__classify_user_agent(user_agent)
                     if classified_user_agent:
                         useragents_count[classified_user_agent] = useragents_count.get(classified_user_agent, 0) + 1
@@ -130,3 +133,4 @@ if __name__ == '__main__':
         print(UserAgents.printConf())
     else:
         print("Wrong Args")
+        sys.exit(1)
