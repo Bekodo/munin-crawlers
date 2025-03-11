@@ -1,3 +1,5 @@
+#!/usr/bin/python2
+
 import json
 import sys
 import os
@@ -38,7 +40,6 @@ class Monitor:
         self.botstrings = {'bot', 'craw'}
 
         if self.environment == 'dev':
-            # Forzar la fecha específica para pruebas
             fixed_time_str = "10/Mar/2025:18:19:47"
             fixed_time = datetime.datetime.strptime(fixed_time_str, "%d/%b/%Y:%H:%M:%S")
             
@@ -65,13 +66,12 @@ class Monitor:
 
         try:
             with open(self.file_name, 'r') as read_obj:
-                # Leer las últimas limitloglines líneas del archivo
                 lines = read_obj.readlines()[-self.limitloglines:]
         except FileNotFoundError:
-            print(f"File {self.file_name} not found.")
+            print "File %s not found." % self.file_name
             return
         except Exception as e:
-            print(f"Error reading file {self.file_name}: {e}")
+            print "Error reading file %s: %s" % (self.file_name, str(e))
             return
 
         for line in lines:
@@ -83,7 +83,7 @@ class Monitor:
                     classified_user_agent = self.__classify_user_agent(user_agent)
                     if classified_user_agent:
                         useragents_count[classified_user_agent] = useragents_count.get(classified_user_agent, 0) + 1
-                except json.JSONDecodeError:
+                except ValueError:
                     continue
 
         self.useragents = sorted(useragents_count.items(), key=lambda x: x[1], reverse=True)
@@ -91,13 +91,13 @@ class Monitor:
     def printValue(self):
         self.__check_if_string_in_file()
         for key, value in self.useragents:
-            print(f"{key}.value {value}")
+            print "%s.value %d" % (key, value)
 
     def __setconfOrder(self):
         order = "graph_order others"
         for item in self.useragents:
             if item[0] not in ('others', 'Total'):
-                order += f" {item[0]}"
+                order += " %s" % item[0]
         order += "\n"
         return order
 
@@ -112,17 +112,17 @@ class Monitor:
         )
         config += self.__setconfOrder()
         for item in self.useragents:
-            config += f"{item[0]}.label {item[0]}\n"
+            config += "%s.label %s\n" % (item[0], item[0])
             if item[0] == 'others':
-                config += f"{item[0]}.draw AREA\n"
+                config += "%s.draw AREA\n" % item[0]
             elif item[0] == 'Total':
                 config += (
-                    f"{item[0]}.draw LINE1\n"
-                    f"{item[0]}.colour 454545\n"
+                    "%s.draw LINE1\n"
+                    "%s.colour 454545\n" % (item[0], item[0])
                 )
             else:
-                config += f"{item[0]}.draw STACK\n"
-            config += f"{item[0]}.type GAUGE\n"
+                config += "%s.draw STACK\n" % item[0]
+            config += "%s.type GAUGE\n" % item[0]
         return config.strip()
 
 if __name__ == '__main__':
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         UserAgents.printValue()
     elif sys.argv[1] == "config":
-        print(UserAgents.printConf())
+        print UserAgents.printConf()
     else:
-        print("Wrong Args")
+        print "Wrong Args"
         sys.exit(1)
