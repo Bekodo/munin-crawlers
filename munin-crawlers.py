@@ -1,17 +1,19 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 import json
 import sys
 import os
 import datetime
 
+LOG_TIME_FORMAT = "%d/%b/%Y:%H:%M:%S %z"
+WINDOW_MINUTES = 5
+
 class Monitor:
     def __init__(self):
         self.file_name = os.environ.get('file_name')
         self.environment = os.environ.get('environment')
-        self.periods = []
         self.useragents = {}
-        self.limitloglines = 5000
+        self.limitloglines = 25000
         self.listuseragents = {
             'Googlebot',
             'AhrefsBot',
@@ -40,16 +42,13 @@ class Monitor:
         self.botstrings = {'bot', 'craw'}
 
         if self.environment == 'dev':
-            fixed_time_str = "10/Mar/2025:18:19:47"
-            fixed_time = datetime.datetime.strptime(fixed_time_str, "%d/%b/%Y:%H:%M:%S")
-            
-            for i in range(1, 6):
-                time = fixed_time - datetime.timedelta(minutes=i)
-                self.periods.append(time.strftime("[%d/%b/%Y:%H:%M:"))
-        else:        
-            for i in range(1,6):
-                time = datetime.datetime.now() - datetime.timedelta(minutes=i)
-                self.periods.append(time.strftime("[%d/%b/%Y:%H:%M:"))
+            # Forzar la fecha específica para pruebas
+            fixed_time_str = "10/Mar/2025:18:19:47 +0000"
+            now_ref = datetime.datetime.strptime(fixed_time_str, LOG_TIME_FORMAT)
+        else:
+            now_ref = datetime.datetime.now(datetime.timezone.utc)
+
+        self.window_start = now_ref - datetime.timedelta(minutes=WINDOW_MINUTES)
 
     def __classify_user_agent(self, useragent):
         useragent_lower = useragent.lower()
@@ -61,43 +60,54 @@ class Monitor:
                 return 'others'
         return None
 
+    def __parse_log_time(self, raw_time):
+        try:
+            return datetime.datetime.strptime(raw_time.strip('[]'), LOG_TIME_FORMAT)
+        except (ValueError, TypeError):
+            return None
+
     def __check_if_string_in_file(self):
         useragents_count = {'others': 0, 'Total': 0}
 
         try:
             with open(self.file_name, 'r') as read_obj:
+                # Leer las últimas limitloglines líneas del archivo
                 lines = read_obj.readlines()[-self.limitloglines:]
         except FileNotFoundError:
-            print "File %s not found." % self.file_name
+            print(f"File {self.file_name} not found.")
             return
         except Exception as e:
-            print "Error reading file %s: %s" % (self.file_name, str(e))
+            print(f"Error reading file {self.file_name}: {e}")
             return
 
         for line in lines:
-            if any(time in line for time in self.periods):
-                try:
-                    data_json = json.loads(line)
-                    useragents_count['Total'] += 1
-                    user_agent = data_json.get('userAgent', '')
-                    classified_user_agent = self.__classify_user_agent(user_agent)
-                    if classified_user_agent:
-                        useragents_count[classified_user_agent] = useragents_count.get(classified_user_agent, 0) + 1
-                except ValueError:
-                    continue
+            try:
+                data_json = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            event_time = self.__parse_log_time(data_json.get('time', ''))
+            if event_time is None or event_time < self.window_start:
+                continue
+
+            useragents_count['Total'] += 1
+            user_agent = data_json.get('userAgent', '')
+            classified_user_agent = self.__classify_user_agent(user_agent)
+            if classified_user_agent:
+                useragents_count[classified_user_agent] = useragents_count.get(classified_user_agent, 0) + 1
 
         self.useragents = sorted(useragents_count.items(), key=lambda x: x[1], reverse=True)
 
     def printValue(self):
         self.__check_if_string_in_file()
         for key, value in self.useragents:
-            print "%s.value %d" % (key, value)
+            print(f"{key}.value {value}")
 
     def __setconfOrder(self):
         order = "graph_order others"
         for item in self.useragents:
             if item[0] not in ('others', 'Total'):
-                order += " %s" % item[0]
+                order += f" {item[0]}"
         order += "\n"
         return order
 
@@ -112,17 +122,17 @@ class Monitor:
         )
         config += self.__setconfOrder()
         for item in self.useragents:
-            config += "%s.label %s\n" % (item[0], item[0])
+            config += f"{item[0]}.label {item[0]}\n"
             if item[0] == 'others':
-                config += "%s.draw AREA\n" % item[0]
+                config += f"{item[0]}.draw AREA\n"
             elif item[0] == 'Total':
                 config += (
-                    "%s.draw LINE1\n"
-                    "%s.colour 454545\n" % (item[0], item[0])
+                    f"{item[0]}.draw LINE1\n"
+                    f"{item[0]}.colour 454545\n"
                 )
             else:
-                config += "%s.draw STACK\n" % item[0]
-            config += "%s.type GAUGE\n" % item[0]
+                config += f"{item[0]}.draw STACK\n"
+            config += f"{item[0]}.type GAUGE\n"
         return config.strip()
 
 if __name__ == '__main__':
@@ -130,7 +140,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         UserAgents.printValue()
     elif sys.argv[1] == "config":
-        print UserAgents.printConf()
+        print(UserAgents.printConf())
     else:
-        print "Wrong Args"
+        print("Wrong Args")
         sys.exit(1)
