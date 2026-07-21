@@ -5,6 +5,8 @@ import sys
 import os
 import datetime
 
+from crawler_agents import LIST_USERAGENTS, BOT_STRINGS
+
 LOG_TIME_FORMAT = "%d/%b/%Y:%H:%M:%S %z"
 WINDOW_MINUTES = 5
 
@@ -14,32 +16,8 @@ class Monitor:
         self.environment = os.environ.get('environment')
         self.useragents = {}
         self.limitloglines = 25000
-        self.listuseragents = {
-            'Googlebot',
-            'AhrefsBot',
-            'SemrushBot',
-            'bingbot',
-            'aspiegel',
-            'Applebot',
-            'AMPHTML',
-            'mj12bot',
-            'Twitterbot',
-            'BLEXBot',
-            'DotBot',
-            'GPTBot',
-            'Amazonbot',
-            'Siteimprove',
-            'SeekportBot',
-            'yandex',
-            'ClaudeBot',
-            'facebookexternalhit',
-            'UptimeRobot',
-            'GoogleOther',
-            'AwarioBot',
-            'Yeti',
-            'meta'
-        }
-        self.botstrings = {'bot', 'craw'}
+        self.listuseragents = LIST_USERAGENTS
+        self.botstrings = BOT_STRINGS
 
         if self.environment == 'dev':
             # Forzar la fecha específica para pruebas
