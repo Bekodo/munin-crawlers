@@ -70,7 +70,7 @@ class Monitor:
         useragents_count = {'others': 0, 'Total': 0}
 
         try:
-            with open(self.file_name, 'r') as read_obj:
+            with open(self.file_name, 'r', encoding='utf-8', errors='replace') as read_obj:
                 # Leer las últimas limitloglines líneas del archivo
                 lines = read_obj.readlines()[-self.limitloglines:]
         except FileNotFoundError:
