@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import json
+import re
 import sys
 import os
 import datetime
@@ -10,6 +11,15 @@ from crawler_agents import LIST_USERAGENTS, BOT_STRINGS
 LOG_TIME_FORMAT = "%d/%b/%Y:%H:%M:%S %z"
 WINDOW_MINUTES = 5
 MIN_CRAWLER_VALUE = 10
+INVALID_FIELD_CHARS = re.compile(r'[^A-Za-z0-9_]')
+
+
+def field_id(name):
+    # Los nombres de campo de munin solo admiten [a-zA-Z0-9_], a diferencia de .label
+    sanitized = INVALID_FIELD_CHARS.sub('_', name)
+    if not sanitized or not (sanitized[0].isalpha() or sanitized[0] == '_'):
+        sanitized = f'f_{sanitized}'
+    return sanitized
 
 class Monitor:
     def __init__(self):
@@ -109,14 +119,14 @@ class Monitor:
     def printValue(self):
         self.__check_if_string_in_file()
         for field, value in self.useragents:
-            print(f"{field}.value {value}")
+            print(f"{field_id(field)}.value {value}")
 
     def __ordered_fields(self):
         crawler_fields = [field for field, _ in self.useragents if field not in ('others', 'Total')]
         return ['others'] + crawler_fields + ['Total']
 
     def __setconfOrder(self):
-        return "graph_order " + " ".join(self.__ordered_fields()) + "\n"
+        return "graph_order " + " ".join(field_id(field) for field in self.__ordered_fields()) + "\n"
 
     def printConf(self):
         self.__check_if_string_in_file()
@@ -129,17 +139,18 @@ class Monitor:
         )
         config += self.__setconfOrder()
         for field in self.__ordered_fields():
-            config += f"{field}.label {field}\n"
+            fid = field_id(field)
+            config += f"{fid}.label {field}\n"
             if field == 'others':
-                config += f"{field}.draw AREA\n"
+                config += f"{fid}.draw AREA\n"
             elif field == 'Total':
                 config += (
-                    f"{field}.draw LINE1\n"
-                    f"{field}.colour 454545\n"
+                    f"{fid}.draw LINE1\n"
+                    f"{fid}.colour 454545\n"
                 )
             else:
-                config += f"{field}.draw STACK\n"
-            config += f"{field}.type GAUGE\n"
+                config += f"{fid}.draw STACK\n"
+            config += f"{fid}.type GAUGE\n"
         return config.strip()
 
 if __name__ == '__main__':
