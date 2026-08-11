@@ -12,6 +12,36 @@ LOG_TIME_FORMAT = "%d/%b/%Y:%H:%M:%S %z"
 WINDOW_MINUTES = 5
 INVALID_FIELD_CHARS = re.compile(r'[^A-Za-z0-9_]')
 
+# 200 is never stacked — the gap between the Total line and the top of the
+# stack below is exactly the 200 traffic. Every other known code gets a
+# fixed shade from its range's palette (darkest first), so colours stay
+# stable across polls regardless of which codes show up in a given window.
+RANGE_PALETTES = {
+    '2': ['1B5E20', '2E7D32', '388E3C', '43A047', '4CAF50', '66BB6A', '81C784', 'A5D6A7', 'C8E6C9'],  # green
+    '3': ['0D47A1', '1565C0', '1976D2', '1E88E5', '2196F3', '42A5F5', '64B5F6', '90CAF9', 'BBDEFB'],  # blue
+    '4': ['4A148C', '6A1B9A', '7B1FA2', '8E24AA', '9C27B0', 'AB47BC', 'BA68C8', 'CE93D8', 'E1BEE7'],  # purple
+    '5': ['B71C1C', 'C62828', 'D32F2F', 'E53935', 'F44336', 'EF5350', 'E57373', 'EF9A9A', 'FFCDD2'],  # red
+}
+
+
+def _build_code_colours(labels):
+    colours = {}
+    for range_digit, palette in RANGE_PALETTES.items():
+        codes_in_range = sorted(code for code in labels if code.startswith(range_digit) and code != '200')
+        for shade, code in zip(palette, codes_in_range):
+            colours[code] = shade
+    return colours
+
+
+CODE_COLOURS = _build_code_colours(STATUS_LABELS)
+# 200 gets its own field too (so it has a real legend row with Cur/Min/Avg/Max),
+# drawn as a LINE with low alpha (~19% opacity) instead of a full colour — the
+# alpha channel affects the legend swatch too (confirmed against a real
+# munin-node run), so alpha 00 left the legend entry with no colour at all.
+# This keeps the line faint on the graph while still giving the legend a
+# visibly green swatch. Bump the last byte (00-ff) to taste.
+CODE_COLOURS['200'] = '4CAF5030'
+
 
 def field_id(name):
     # Los nombres de campo de munin solo admiten [a-zA-Z0-9_], a diferencia de .label
@@ -39,9 +69,9 @@ class Monitor:
 
     def __classify_status(self, status):
         status = str(status).strip()
-        if status in self.statuslabels:
-            return status
-        return 'others'
+        if status not in self.statuslabels:
+            return None
+        return status
 
     def __parse_log_time(self, raw_time):
         try:
@@ -68,7 +98,7 @@ class Monitor:
         return data.splitlines()[-num_lines:]
 
     def __check_if_string_in_file(self):
-        status_count = {'others': 0, 'Total': 0}
+        status_count = {'Total': 0}
 
         try:
             with open(self.file_name, 'rb') as read_obj:
@@ -96,10 +126,11 @@ class Monitor:
             status_count['Total'] += 1
             status = data_json.get('status', '')
             classified_status = self.__classify_status(status)
-            status_count[classified_status] = status_count.get(classified_status, 0) + 1
+            if classified_status:
+                status_count[classified_status] = status_count.get(classified_status, 0) + 1
 
         self.statuscodes = sorted(
-            ((field, value) for field, value in status_count.items() if value > 0 or field in ('others', 'Total')),
+            ((field, value) for field, value in status_count.items() if value > 0 or field == 'Total'),
             key=lambda item: item[1],
             reverse=True,
         )
@@ -110,14 +141,21 @@ class Monitor:
             print(f"{field_id(field)}.value {value}")
 
     def __ordered_fields(self):
-        status_fields = [field for field, _ in self.statuscodes if field not in ('others', 'Total')]
-        return ['others'] + status_fields + ['Total']
+        # Stack from 2xx up to 5xx (bottom to top). 200 is not part of that
+        # stack — it's an invisible LINE — so it's placed after it, and
+        # Total always last so its LINE1 paints on top of everything.
+        fields_present = [field for field, _ in self.statuscodes if field != 'Total']
+        error_fields = sorted((field for field in fields_present if field != '200'), key=lambda code: int(code))
+        ordered = error_fields
+        if '200' in fields_present:
+            ordered = ordered + ['200']
+        return ordered + ['Total']
 
     def __setconfOrder(self):
         return "graph_order " + " ".join(field_id(field) for field in self.__ordered_fields()) + "\n"
 
     def __label_for(self, field):
-        if field in ('others', 'Total'):
+        if field == 'Total':
             return field
         description = self.statuslabels.get(field, '')
         return f"{field} {description}".strip()
@@ -131,19 +169,32 @@ class Monitor:
             "graph_period second\n"
             "graph_category system\n"
         )
+        ordered = self.__ordered_fields()
         config += self.__setconfOrder()
-        for field in self.__ordered_fields():
+        for field in ordered:
             fid = field_id(field)
             config += f"{fid}.label {self.__label_for(field)}\n"
-            if field == 'others':
-                config += f"{fid}.draw AREA\n"
-            elif field == 'Total':
+            if field == 'Total':
                 config += (
                     f"{fid}.draw LINE1\n"
                     f"{fid}.colour 454545\n"
                 )
+            elif field == '200':
+                # Not part of the stack: a faint low-alpha line, mainly for
+                # its legend row — the 200 traffic itself is still visually
+                # the gap between the top of the error stack and Total.
+                config += (
+                    f"{fid}.draw LINE1\n"
+                    f"{fid}.colour {CODE_COLOURS[field]}\n"
+                )
             else:
-                config += f"{fid}.draw STACK\n"
+                # The first stacked series must be an AREA to give the stack
+                # a base; every series after it stacks on top via STACK.
+                draw = 'AREA' if field == ordered[0] else 'STACK'
+                config += (
+                    f"{fid}.draw {draw}\n"
+                    f"{fid}.colour {CODE_COLOURS[field]}\n"
+                )
             config += f"{fid}.type GAUGE\n"
         return config.strip()
 
